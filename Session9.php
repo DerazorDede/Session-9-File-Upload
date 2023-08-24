@@ -12,6 +12,19 @@
         return htmlspecialchars(trim($input));
     }
 
+    $userRole = 'user';
+    $permissions = [
+        'RoleA' => ['upload', 'manage_users'],
+        'RoleB' => ['upload']
+    ];
+    $requestedPermission = 'upload';
+    
+    if (in_array($requestedPermission, $permissions[$userRole])) {
+        echo "You're in? Lets do this";
+    } else {
+        echo "Access Denied! Leave or be terminated!";
+    }    
+
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!empty($_POST['email'])) {
             $email = sanitizeInput($_POST['email']);
@@ -21,6 +34,7 @@
         } else {
             echo '<p class="error">Email is required</p>';
         }
+        
         if (!empty($_FILES['file']['name'])) {
             $allowedTypes = array('image/jpeg', 'image/png');
             $fileType = $_FILES['file']['type'];
@@ -53,6 +67,8 @@
         <br>
         <input type="submit" value="Submit">
     </form>
+    <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY"></div>
+
 
     <?php
     if (!empty($fileError)) {
@@ -61,6 +77,18 @@
     if (!empty($uploadSuccess)) {
         echo '<p class="success">' . $uploadSuccess . '</p>';
     }
+    $recaptchaSecret = 'YOUR_SECRET_KEY';
+    $recaptchaResponse = $_POST['g-recaptcha-response'];
+
+    $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
+    $responseKeys = json_decode($response, true);
+
+    if (intval($responseKeys["success"]) !== 1) {
+        echo "Robot?! Get the hell out now!"; // reCaptcha verification failed
+    } else {
+        echo "Verification granted. It seems like you're a real human after all"; // reCaptcha verification successful
+    }
     ?>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </body>
 </html>
